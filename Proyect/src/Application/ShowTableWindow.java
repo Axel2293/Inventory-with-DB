@@ -402,8 +402,11 @@ public class ShowTableWindow implements ActionListener {
 			}
 			//  Filter only by primary key
 			else if(tglbtnNewToggleButton_1.isSelected()){
-
+				// query = db.prepareStatement("SELECT * FROM "+table_name+" WHERE "+columnFilter+"=?;");
+				// query.setObject(1, value);
+				// data = query.executeQuery();
 			}
+			// No Filter
 			else{
 				query = db.prepareStatement("SELECT * FROM "+table_name);
 				data = query.executeQuery();

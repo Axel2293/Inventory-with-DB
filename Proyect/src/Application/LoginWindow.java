@@ -156,8 +156,17 @@ public class LoginWindow implements ActionListener{
 				
 				// OPEN THE TABLE WINDOW AFTER LOGIN
 				Account loged = new Account(userID.intValue());
-				ShowTableWindow.CreateTableWindow(loged);
-				res.close();
+
+				if (loged.getPermisions() == 1) {
+					CashierWindow.CreateCashierWindow(loged);
+				}
+				else if (loged.getPermisions() == 0) {
+					ShowTableWindow.CreateTableWindow(loged);
+				}
+				
+				
+				
+				// res.close();
 				
 			}
 			else{

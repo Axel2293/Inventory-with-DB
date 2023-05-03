@@ -1,8 +1,11 @@
 package DataBaseConnection;
 
 import java.sql.*;
+import java.util.Vector;
 
 import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
                                                                                                                                                                                                                         
 
 /**
@@ -48,6 +51,8 @@ public class DBToolkit {
         return DBToolkit.instace;
     }
 
+
+
     public static void setCredentials(String user, String password){
         DBToolkit.user = user;
         DBToolkit.pass = password;
@@ -82,6 +87,58 @@ public class DBToolkit {
         }
     }
 
-     
+    /*
+     * Removes all the data that its on the table model
+     */
+    public static void deleteTableData(DefaultTableModel tbl){
+		// Remove rows
+		int rows = tbl.getRowCount();
+		for(int i=0; i<rows; i++){
+			// JOptionPane.showMessageDialog(null, "Removing row at "+ i);
+			tbl.removeRow(0);
+		}
+		// Delete Tables
+		tbl.setColumnCount(0);
+	}
+
+    /*
+     * Takes the result set from a consult and puts the data on a table model
+     */
+    public static void showData(ResultSet data, DefaultTableModel tbl){
+        ResultSetMetaData meta;
+        try {
+
+			//Gets meta data to get the columns names
+            meta = data.getMetaData();
+		    int columnsLen = meta.getColumnCount();
+        
+            // Get column names
+            for(int i=1; i<=columnsLen; i++){
+				tbl.addColumn(meta.getColumnName(i));
+            }
+
+            // Get rows data
+            while(data.next()){
+
+                Vector<Object> row= new Vector<>();
+
+                //Save the data in the vector
+                for(int i=1; i<=columnsLen; i++){
+					// Store column info in vector
+                    row.addElement(data.getObject(i));
+                }
+				// Add row vector to table
+                tbl.addRow(row);
+            }
+			data.close();
+        } catch (Exception e) {
+            // TODO: handle exception
+            System.out.println("HOLAAAAAAAA");
+            e.printStackTrace();
+            
+        }
+
+		
+	}
 
 }
