@@ -13,6 +13,7 @@ import javax.swing.border.LineBorder;
 import java.awt.Color;
 import java.awt.BorderLayout;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.BoxLayout;
 import javax.swing.border.EtchedBorder;
 import java.awt.FlowLayout;
@@ -20,9 +21,14 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Vector;
 import java.util.concurrent.Executors;
 
 import javax.swing.SwingConstants;
@@ -48,10 +54,15 @@ public class CashierWindow implements ActionListener{
 	private JTextField textField_1;
 	private JTextField textField_2;
 	private JTextField textField_3;
-
+	private JLabel lblNewLabel_1;
+	
     private JButton btnNewButton;
+	private JButton btnNewButton_2;
 
     private Account loged;
+	private HashMap <Integer, Vector<Object>> cart = new HashMap<>();
+	private Set<Integer> productsIDSet; 
+	private Double total = 0.0;
 
 	/**
 	 * Launch the application.
@@ -163,8 +174,9 @@ public class CashierWindow implements ActionListener{
 		panel_6.add(textField_3, "cell 1 2,growx");
 		textField_3.setColumns(10);
 		
-		JButton btnNewButton_2 = new JButton("Agregar");
+		btnNewButton_2 = new JButton("Agregar");
 		panel_6.add(btnNewButton_2, "flowx,cell 1 3");
+		btnNewButton_2.addActionListener(this);
 		
 		JButton btnNewButton_3 = new JButton("Eliminar");
 		panel_6.add(btnNewButton_3, "cell 1 3");
@@ -207,7 +219,7 @@ public class CashierWindow implements ActionListener{
 		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 15));
 		panel_4.add(lblNewLabel);
 		
-		JLabel lblNewLabel_1 = new JLabel("$");
+		lblNewLabel_1 = new JLabel("$");
 		panel_4.add(lblNewLabel_1);
 		
 		JButton btnNewButton_1 = new JButton("Completar compra");
@@ -216,6 +228,12 @@ public class CashierWindow implements ActionListener{
 
         // First search
         updateProductsTable(null);
+
+		// Add columnns for the cart
+		m2.addColumn("Producto");
+		m2.addColumn("Cantidad");
+		m2.addColumn("Precio c/u");
+		m2.addColumn("ID");
 	}
 
     public void actionPerformed(ActionEvent e){
@@ -228,6 +246,14 @@ public class CashierWindow implements ActionListener{
                 updateProductsTable(search);
             }
         }
+		else if (e.getSource() == btnNewButton_2){
+			Executors.newSingleThreadExecutor().execute(new Runnable() {
+				@Override
+				public void run(){
+					addCartProduct(textField_1.getText(), textField_2.getText());
+				}
+			});
+		}
     }
 
     public void updateProductsTable(String search){
@@ -247,7 +273,7 @@ public class CashierWindow implements ActionListener{
     }
 
     public ResultSet getProductsData(String search){
-        DBToolkit db = DBToolkit.getToolkit("root", "Legoishadow22", "jdbc:mysql://20.25.141.116:3306/Company");
+        DBToolkit db = DBToolkit.getToolkit();
         Connection c1 = db.getConnection();
         ResultSet data = null;
 
@@ -268,14 +294,103 @@ public class CashierWindow implements ActionListener{
         return data;
     }
 
-    public void addCartProduct(int id, int quantity){
+    public void addCartProduct(String id, String quantity){
+		DBToolkit db = DBToolkit.getToolkit();
+        Connection c1 = db.getConnection();
+        ResultSet data = null;
 
+		try {
+			int productID = Integer.parseInt(id);
+			int qt = Integer.parseInt(quantity);
+			// Get the name price and quantity in inventory from the product
+			PreparedStatement query = c1.prepareStatement("SELECT price, quantity, name FROM products WHERE idproduct=?;");
+			query.setInt(1, productID);
+			data = query.executeQuery();
+
+			// If product exist int the DB and entered data is not out of range
+			if (data.next()  && qt >0 && productID>=0) {
+				// if its not already in the cart
+				if (!cart.containsKey(productID) && checkInventory(data.getInt("quantity"), qt)) {
+					Vector <Object> pdct = new Vector<>();
+					// Name
+					pdct.add(data.getString(3));
+					// Quantity
+					pdct.add(qt);
+					// price
+					pdct.add(data.getDouble(1));
+					// Add the id
+					pdct.add(productID);
+					// Add the product to the HashMap of the cart
+					cart.put(productID, pdct);
+					// Add the row to the rable
+					m2.addRow(pdct);
+					// Update the total
+					addTotal(qt, data.getDouble(1));
+				}
+				// The product is already on the shoping list
+				else if(cart.containsKey(productID)){
+					// Get the product on the cart
+					Vector <Object> pdInCart = cart.get(productID);
+					Integer total = (Integer) pdInCart.get(1);
+					if (checkInventory(data.getInt("quantity") , qt+total)) {
+						total+=qt;
+						pdInCart.setElementAt(total, 1);
+						m2.fireTableDataChanged();
+						addTotal(qt, data.getDouble(1));
+					}
+					else{
+						JOptionPane.showMessageDialog(null, "No hay inventario suficiente para el producto: "+data.getString("name"), "Inventario insuficiente", JOptionPane.INFORMATION_MESSAGE);
+					}
+					
+				}
+				else {
+					JOptionPane.showMessageDialog(null, "No hay inventario suficiente para el producto: "+data.getString("name"), "Inventario insuficiente", JOptionPane.INFORMATION_MESSAGE);
+				}
+				
+
+			}else {
+				JOptionPane.showMessageDialog(null, "Producto no encontrado o los datos son erroneos", "No encontrado", JOptionPane.ERROR_MESSAGE);
+			}
+
+
+		} catch (NumberFormatException e) {
+			JOptionPane.showMessageDialog(null, "El id o la cantidad no son numeros", "Error", JOptionPane.ERROR_MESSAGE);
+		} catch(SQLException ex){
+			JOptionPane.showMessageDialog(null, "Error en al base de datos", "Error", JOptionPane.ERROR_MESSAGE);
+		}
     }
 
     public void removeCartProduct(int id, int quantity){
+		// Search in the rows till you find the exact row the product is
+		Integer pID=0;
 
+		for(int i=0; i<m2.getRowCount(); i++){
+			pID = (Integer) m2.getValueAt(i, 3);
+			if (id == pID) {
+				
+			}
+		}
     }
 
+	public void pushTransaction(String client, int cashierID, double total, Date transactionDate){
+
+	}
+
+	private void addTotal(int quantity, double price){
+		total += (double)quantity*price;
+
+		DecimalFormat df = new DecimalFormat(".####");
+		
+		lblNewLabel_1.setText("$"+df.format(total));
+	}
+
+	private boolean checkInventory(int invQT, int buy){
+		if (invQT < buy) {
+			return false;
+		}else {
+			return true;
+		}
+	}
     
 
 }

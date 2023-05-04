@@ -14,10 +14,10 @@ import javax.swing.table.DefaultTableModel;
 public class DBToolkit {
 
     //  User and password to make the connecton to the data base 
-    private static String pass=null;
-    private static String user=null;
+    private  String pass=null;
+    private  String user=null;
     // Url of the data base
-    private static String url = null;
+    private  String url = null;
 
     // Unique instance of the toolkit
     private static DBToolkit instace = null;
@@ -25,18 +25,9 @@ public class DBToolkit {
     // Open connection to the database
     private Connection DB = null;
     
-    private DBToolkit(){
-
-    }
-
-    /*
-     * Gives the instance of the toolkit without initializing the credentials for the connection with the data base.
-     */
-    public static DBToolkit getToolkit(){
-        if(DBToolkit.instace == null){
-            DBToolkit.instace = new DBToolkit();
-        }
-        return DBToolkit.instace;
+    private DBToolkit(String user, String pass, String url){
+        setCredentials(user, pass);
+        setUrl(url);
     }
 
     /*
@@ -44,32 +35,37 @@ public class DBToolkit {
      */
     public static DBToolkit getToolkit(String user, String pass, String url){
         if(DBToolkit.instace == null){
-            DBToolkit.instace = new DBToolkit();
-            setCredentials(user, pass);
-            setUrl(url);
+            DBToolkit.instace = new DBToolkit(user, pass, url);
+
         }
         return DBToolkit.instace;
     }
 
+    public static DBToolkit getToolkit(){
+        if(DBToolkit.instace == null){
+            DBToolkit.instace = new DBToolkit(null, null, null);
 
-
-    public static void setCredentials(String user, String password){
-        DBToolkit.user = user;
-        DBToolkit.pass = password;
+        }
+        return DBToolkit.instace;
     }
 
-    public static void setUrl(String url){
-        DBToolkit.url = url;
+    public void setCredentials(String user, String password){
+        this.user = user;
+        pass = password;
+    }
+
+    public void setUrl(String url){
+        this.url = url;
     }
 
     public Connection getConnection(){
 		try {
 			if(DB == null){
-                DB = DriverManager.getConnection(DBToolkit.url, DBToolkit.user, DBToolkit.pass);
+                DB = DriverManager.getConnection(url, user, pass);
             }
 		}catch(SQLException ex) {
             ex.printStackTrace();
-			JOptionPane.showMessageDialog(null, "Revisa tu conexion a internet");
+			JOptionPane.showMessageDialog(null, "Revisa tu conexion a internet"+user+pass+url);
 		}
         return DB;
 	}
@@ -97,6 +93,7 @@ public class DBToolkit {
 			// JOptionPane.showMessageDialog(null, "Removing row at "+ i);
 			tbl.removeRow(0);
 		}
+        tbl.setNumRows(0);
 		// Delete Tables
 		tbl.setColumnCount(0);
 	}

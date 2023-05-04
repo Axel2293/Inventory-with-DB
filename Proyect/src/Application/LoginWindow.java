@@ -139,7 +139,7 @@ public class LoginWindow implements ActionListener{
 		String  password= new String(passwordField.getPassword());
 		
 		//  Conection to MySQL remote DB
-		DBToolkit db = DBToolkit.getToolkit("root", "Legoishadow22", "jdbc:mysql://20.25.141.116:3306/Company");
+		DBToolkit db = DBToolkit.getToolkit();
 		Connection c1 = db.getConnection();
 		
 		ResultSet res = null;
