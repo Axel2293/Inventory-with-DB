@@ -8,6 +8,7 @@ import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JComboBox;
 import java.awt.Font;
 import javax.swing.JPanel;
@@ -15,22 +16,26 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 
 import DataBaseConnection.DBToolkit;
-import Users.Account;
+import Users.Employee;
 
 import java.awt.Color;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.Vector;
-import java.util.concurrent.Executors;
 import java.awt.event.ActionEvent;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 
-public class ShowTableWindow implements ActionListener {
+/**
+ * Window with a display of the selected table with some tools for modification like, add, delete, modify.
+ * @Admin admin user can acces all tables
+ * @Inventory inventory admin can only access the products table
+ */
+public class AdministratorPanel implements ActionListener {
 
 	private JFrame frame;
 	private JComboBox<String> comboBox;
@@ -38,27 +43,28 @@ public class ShowTableWindow implements ActionListener {
 	private JTable table;
 	private JTextField textField;
 	private JTextField textField_1;
-	private JTextField textField_2;
 	private JTextField textField_3;
 	private JTextField textField_4;
 
 	private JToggleButton tglbtnNewToggleButton;
-	private JToggleButton tglbtnNewToggleButton_1;
 	private JToggleButton tglbtnNewToggleButton_2;
-
+	
+	private JButton btnNewButton;
 	private JButton btnNewButton_2;
 	private JButton btnNewButton_6;
+	private JButton btnNewButton_1;
+	private JButton btnNewButton_3;
 
-	private Account user;
+	private Employee user;
 
 	/**
 	 * Launch the application.
 	 */
-	public static void CreateTableWindow(Account user) {
+	public static void CreateAdministratorPanel(Employee user) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ShowTableWindow window = new ShowTableWindow(user);
+					AdministratorPanel window = new AdministratorPanel(user);
 					window.frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -71,7 +77,7 @@ public class ShowTableWindow implements ActionListener {
 	/**
 	 * Create the application.
 	 */
-	public ShowTableWindow(Account user) {
+	public AdministratorPanel(Employee user) {
 		// Save the user account data from the login
 		this.user = user;
 		// Build de components
@@ -87,7 +93,7 @@ public class ShowTableWindow implements ActionListener {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(new MigLayout("", "[grow][][grow][][][][][][][][][][][][][][][][][][][][grow][][][][][][][][][]", "[][][grow][grow][][][][][]"));
 		
-		JLabel lblNewLabel_1 = new JLabel("Company");
+		JLabel lblNewLabel_1 = new JLabel("Lumérico Panel de administración");
 		lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, 17));
 		frame.getContentPane().add(lblNewLabel_1, "flowx,cell 0 0 7 2");
 		
@@ -107,6 +113,7 @@ public class ShowTableWindow implements ActionListener {
 		
 		tableModel = new DefaultTableModel();
 		table = new JTable(tableModel);
+		table.setEnabled(false);
 		scrollPane.setViewportView(table);
 		
 		JLabel lblNewLabel = new JLabel("Tabla");
@@ -124,9 +131,6 @@ public class ShowTableWindow implements ActionListener {
 		
 		JSeparator separator_5 = new JSeparator();
 		panel_1.add(separator_5, "cell 0 0,growx");
-		
-		JButton btnNewButton_5 = new JButton("Guardar y actualizar");
-		panel_1.add(btnNewButton_5, "cell 3 0");
 		
 		JLabel lblNewLabel_13 = new JLabel("Rango de filas:");
 		lblNewLabel_13.setFont(new Font("Tahoma", Font.PLAIN, 12));
@@ -149,35 +153,9 @@ public class ShowTableWindow implements ActionListener {
 		tglbtnNewToggleButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				if(tglbtnNewToggleButton.isSelected()){
-					tglbtnNewToggleButton_1.setEnabled(false);
 					tglbtnNewToggleButton_2.setEnabled(false);
 				}
 				else{
-					tglbtnNewToggleButton_1.setEnabled(true);
-					tglbtnNewToggleButton_2.setEnabled(true);
-				}
-			}
-		});
-		
-		JLabel lblNewLabel_15 = new JLabel("Filtrar por llave primaria:");
-		lblNewLabel_15.setFont(new Font("Tahoma", Font.PLAIN, 12));
-		panel_1.add(lblNewLabel_15, "cell 0 2,alignx trailing");
-		
-		textField_2 = new JTextField();
-		panel_1.add(textField_2, "cell 1 2 4 1,growx");
-		textField_2.setColumns(10);
-		
-		// Activates the search by primary key
-		 tglbtnNewToggleButton_1 = new JToggleButton("Activar");
-		panel_1.add(tglbtnNewToggleButton_1, "cell 5 2");
-		tglbtnNewToggleButton_1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e){
-				if(tglbtnNewToggleButton_1.isSelected()){
-					tglbtnNewToggleButton.setEnabled(false);
-					tglbtnNewToggleButton_2.setEnabled(false);
-				}
-				else{
-					tglbtnNewToggleButton.setEnabled(true);
 					tglbtnNewToggleButton_2.setEnabled(true);
 				}
 			}
@@ -195,17 +173,15 @@ public class ShowTableWindow implements ActionListener {
 		textField_3.setColumns(10);
 		
 		// Activates the search by column
-		 tglbtnNewToggleButton_2 = new JToggleButton("Activar");
+		tglbtnNewToggleButton_2 = new JToggleButton("Activar");
 		panel_1.add(tglbtnNewToggleButton_2, "cell 5 4");
 		tglbtnNewToggleButton_2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
 				if(tglbtnNewToggleButton_2.isSelected()){
 					tglbtnNewToggleButton.setEnabled(false);
-					tglbtnNewToggleButton_1.setEnabled(false);
 				}
 				else{
 					tglbtnNewToggleButton.setEnabled(true);
-					tglbtnNewToggleButton_1.setEnabled(true);
 				}
 			}
 		});
@@ -221,9 +197,10 @@ public class ShowTableWindow implements ActionListener {
 		JSeparator separator_1 = new JSeparator();
 		frame.getContentPane().add(separator_1, "cell 0 4,growx");
 		
-		JButton btnNewButton = new JButton("Agregar");
+		btnNewButton = new JButton("Agregar");
 		frame.getContentPane().add(btnNewButton, "cell 0 5,growx");
-		
+		btnNewButton.addActionListener(this);
+
 		JPanel panel = new JPanel();
 		panel.setBorder(new LineBorder(new Color(0, 0, 0)));
 		frame.getContentPane().add(panel, "cell 4 3 28 6,grow");
@@ -257,7 +234,7 @@ public class ShowTableWindow implements ActionListener {
 		JLabel lblNewLabel_5 = new JLabel("Tipo de cuenta: ");
 		panel.add(lblNewLabel_5, "cell 0 6");
 		
-		JLabel lblNewLabel_9 = new JLabel(""+user.getPermisions());
+		JLabel lblNewLabel_9 = new JLabel(""+user.getType());
 		panel.add(lblNewLabel_9, "cell 1 6");
 		
 		JSeparator separator_4 = new JSeparator();
@@ -274,114 +251,110 @@ public class ShowTableWindow implements ActionListener {
 		panel.add(btnNewButton_6, "cell 1 9");
 		btnNewButton_6.addActionListener(this);
 
-		JButton btnNewButton_1 = new JButton("Eliminar");
+		btnNewButton_1 = new JButton("Eliminar");
 		frame.getContentPane().add(btnNewButton_1, "cell 0 6,growx");
+		btnNewButton_1.addActionListener(this);
 		
-		JButton btnNewButton_3 = new JButton("Modificar");
-		btnNewButton_3.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-			}
-		});
+		btnNewButton_3 = new JButton("Modificar");
+		btnNewButton_3.addActionListener(this);
 		frame.getContentPane().add(btnNewButton_3, "cell 0 7,growx");
-		
-		JButton btnNewButton_4 = new JButton("Consultar con ID");
-		frame.getContentPane().add(btnNewButton_4, "cell 0 8,growx");
 		
 		JLabel lblNewLabel_2 = new JLabel("Tabla seleccionada:");
 		frame.getContentPane().add(lblNewLabel_2, "cell 6 1");
 
-		if (hasWritePermission(user.getPermisions()) == false) {
-			System.out.println("Only read permisions");
-			btnNewButton_3.setEnabled(false);
-			btnNewButton_1.setEnabled(false);
-			btnNewButton.setEnabled(false);
-
-		}
-
 	}
 
-	// Actions for the buttons. Every action is executed on a single thread
+	/*
+	 * Actions for the buttons. Every action is executed on a single thread
+	 */
 	public void actionPerformed(ActionEvent e){
 		// Fire refresh of the table
 		if (e.getSource() == btnNewButton_2) {
-			Executors.newSingleThreadExecutor().execute(new Runnable() {
+			EventQueue.invokeLater(new Runnable() {
 				@Override
 				public void run(){
+					btnNewButton_2.setEnabled(false);
 					updateTableData();
+					btnNewButton_2.setEnabled(true);
 				}
 			});
 		}
 		else if (e.getSource() == btnNewButton_6){
+			btnNewButton_6.setEnabled(false);
 			frame.dispose();
 			LoginWindow.createLoginWindow();
 		}
-
-		
+		else if (e.getSource() == btnNewButton ) {
+			AddTableRow.ShowAddTableRow((String) comboBox.getSelectedItem());
+		}
+		else if(e.getSource() == btnNewButton_1){
+			DeleteRow.ShowDeleteRow((String) comboBox.getSelectedItem());
+		}
+		else if (e.getSource() ==btnNewButton_3 ) {
+			try {
+				int ID =Integer.parseInt( JOptionPane.showInputDialog(null, "Ingresa el ID del elemento a modificar en la tabla: "+comboBox.getSelectedItem()));
+				ModifyRow.ShowModifyRow((String) comboBox.getSelectedItem(), ID);
+			} catch (Exception ex) {
+				JOptionPane.showMessageDialog(
+					null, 
+					"Error en el ID ingresado", 
+					"Error al formatear ID", 
+					JOptionPane.ERROR_MESSAGE);
+			}
+		}
 	}
 
 
 
 	/*
 	 * Gets the available tables for the user depending on its type of account
+	 * 	-Admins get full access to tables
+	 * 	-Inventory admins get acces to the products table
 	 */
 	private Vector<String> fetchTables(){
-		Connection db = DBToolkit.getToolkit("root", "Legoishadow22", "jdbc:mysql://20.25.141.116:3306/Company").getConnection();
+		Connection db = DBToolkit.getToolkit().getConnection();
 		Vector <String> names=new Vector<>();
 		try {
 			PreparedStatement query = db.prepareStatement("SHOW TABLES;");
 			ResultSet tablesNames = query.executeQuery();
 			while(tablesNames.next()) {
-				// Only Admin type accounts get acces to the accounts table
-				if (tablesNames.getString(1).equals("accounts") && user.getPermisions() == 0) {
+				// Only Admin type accounts get acces to the accounts table and tickets table
+				if (user.getPermisions() == 0) {
 					names.add(tablesNames.getString(1));
-					System.out.println(tablesNames.getString(1));
 				}
-				// Rest of accounts get access to the rest of tables
-				else if(!tablesNames.getString(1).equals("accounts")) {
+				// Inventory admins get acces to the products table
+				else if(tablesNames.getString(1).equals("products") && user.getPermisions()==2) {
 					names.add(tablesNames.getString(1));
-					System.out.println(tablesNames.getString(1));
 				}
 			}
 			return names;
 
-		} catch (Exception e) {
+		} catch (SQLException e) {
 			// TODO: handle exception
+			JOptionPane.showMessageDialog(null, "Ocurrio un error: "+e, "Error en la DB", JOptionPane.ERROR_MESSAGE);
+
 		}
 		return null;
-	}
-
-	/*
-	 * Deletes all the data currently stored in the table
-	 */
-
-	private void deleteTableData(){
-		// Remove rows
-		int rows = table.getRowCount();
-		for(int i=0; i<rows; i++){
-			// JOptionPane.showMessageDialog(null, "Removing row at "+ i);
-			tableModel.removeRow(0);
-		}
-		// Delete Tables
-		tableModel.setColumnCount(0);
-	}
+	}	
 
 	/*
 	 * Update data on the table
 	 */
 
 	private void updateTableData(){
-		deleteTableData();
-		showData(getTableData((String)comboBox.getSelectedItem()));
+		DBToolkit.deleteTableData(tableModel, true, true);
+		DBToolkit.showData(getTableData((String)comboBox.getSelectedItem()), tableModel, true );
 	}
 
+	/*
+	 * Gets the data of a table with the specified filters (if activated)
+	 */
 	public ResultSet getTableData(String table_name){
-		Connection db = DBToolkit.getToolkit("root", "Legoishadow22", "jdbc:mysql://20.25.141.116:3306/Company").getConnection();
+		Connection db = DBToolkit.getToolkit().getConnection();
 
 		ResultSet data = null;
 		try {
 			PreparedStatement query;
-			
-
 			// Filter only by rows in the table
 			if(tglbtnNewToggleButton.isSelected()){
 				int a=Integer.parseInt(textField.getText()) , b = Integer.parseInt(textField_1.getText());
@@ -400,65 +373,19 @@ public class ShowTableWindow implements ActionListener {
 				data = query.executeQuery();
 				
 			}
-			//  Filter only by primary key
-			else if(tglbtnNewToggleButton_1.isSelected()){
-				// query = db.prepareStatement("SELECT * FROM "+table_name+" WHERE "+columnFilter+"=?;");
-				// query.setObject(1, value);
-				// data = query.executeQuery();
-			}
 			// No Filter
 			else{
 				query = db.prepareStatement("SELECT * FROM "+table_name);
 				data = query.executeQuery();
 			}
 			
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (SQLException e) {
+			JOptionPane.showMessageDialog(null, "Ocurrio un error: "+e, "Error en la DB", JOptionPane.ERROR_MESSAGE);
 		}
 		return data;
 	}
-
-
-	public void showData(ResultSet data){
-        ResultSetMetaData meta;
-        try {
-
-			//Gets meta data to get the columns names
-            meta = data.getMetaData();
-		    int columnsLen = meta.getColumnCount();
-        
-            // Get column names
-            for(int i=1; i<=columnsLen; i++){
-				tableModel.addColumn(meta.getColumnName(i));
-            }
-
-            // Get rows data
-            while(data.next()){
-
-                Vector<Object> row= new Vector<>();
-
-                //Save the data in the vector
-                for(int i=1; i<=columnsLen; i++){
-					// Store column info in vector
-                    row.addElement(data.getObject(i));
-                }
-				// Add row vector to table
-                tableModel.addRow(row);
-            }
-			data.close();
-        } catch (Exception e) {
-            // TODO: handle exception
-            e.printStackTrace();
-        }
-
-		
-	}
 	
-	public boolean hasWritePermission(int type){
-		if(type != 2 && type <2  && type >=0){
-			return true;
-		}return false;
-	}
+
 
 
 }

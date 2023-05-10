@@ -11,38 +11,35 @@ import javax.swing.JButton;
 import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 import java.awt.Color;
-import java.awt.BorderLayout;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.BoxLayout;
 import javax.swing.border.EtchedBorder;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.text.DecimalFormat;
+import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.Vector;
+import java.util.Date;
 import java.util.concurrent.Executors;
 
-import javax.swing.SwingConstants;
-import javax.swing.border.MatteBorder;
 import javax.swing.table.DefaultTableModel;
 
-import com.mysql.cj.x.protobuf.MysqlxPrepare.Prepare;
-import com.mysql.cj.xdevapi.PreparableStatement;
-
 import DataBaseConnection.DBToolkit;
-import Users.Account;
+import Users.Employee;
 
 import javax.swing.border.BevelBorder;
 
+/**
+ * Displays the selling panel to the cashier. Cart system, add-remove operations and a complete transaction that removes the sold products from the DB and generates a ticket.
+ */
 public class CashierWindow implements ActionListener{
 
 	private JFrame frmPuntoDeVenta;
@@ -58,16 +55,18 @@ public class CashierWindow implements ActionListener{
 	
     private JButton btnNewButton;
 	private JButton btnNewButton_2;
+	private JButton btnNewButton_3;
+	private JButton btnNewButton_1;
+	private JButton btnNewButton_4;
 
-    private Account loged;
+    private Employee loged;
 	private HashMap <Integer, Vector<Object>> cart = new HashMap<>();
-	private Set<Integer> productsIDSet; 
 	private Double total = 0.0;
 
 	/**
 	 * Launch the application.
 	 */
-	public static void CreateCashierWindow(Account user) {
+	public static void CreateCashierWindow(Employee user) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -83,7 +82,7 @@ public class CashierWindow implements ActionListener{
 	/**
 	 * Create the application.
 	 */
-	public CashierWindow(Account user) {
+	public CashierWindow(Employee user) {
 		loged = user;
         initialize();
 	}
@@ -129,6 +128,7 @@ public class CashierWindow implements ActionListener{
 		
         m1 = new DefaultTableModel();
 		table = new JTable(m1);
+		table.setEnabled(false);
 		scrollPane_1.setViewportView(table);
 		
 		JLabel lblNewLabel_4 = new JLabel("Lista de productos");
@@ -178,12 +178,14 @@ public class CashierWindow implements ActionListener{
 		panel_6.add(btnNewButton_2, "flowx,cell 1 3");
 		btnNewButton_2.addActionListener(this);
 		
-		JButton btnNewButton_3 = new JButton("Eliminar");
+		btnNewButton_3 = new JButton("Eliminar");
 		panel_6.add(btnNewButton_3, "cell 1 3");
+		btnNewButton_3.addActionListener(this);
 		
-		JButton btnNewButton_4 = new JButton("Cerrar sesion");
+		btnNewButton_4 = new JButton("Cerrar sesion");
 		btnNewButton_4.setBounds(10, 167, 120, 23);
 		panel_2.add(btnNewButton_4);
+		btnNewButton_4.addActionListener(this);
 		
 		JPanel panel_3 = new JPanel();
 		panel_3.setBorder(new LineBorder(new Color(0, 0, 0)));
@@ -202,6 +204,7 @@ public class CashierWindow implements ActionListener{
 		
         m2 = new DefaultTableModel();
 		table_1 = new JTable(m2);
+		table_1.setEnabled(false);
 		scrollPane_2.setViewportView(table_1);
 		
 		JLabel lblNewLabel_2 = new JLabel("Carrito");
@@ -222,12 +225,13 @@ public class CashierWindow implements ActionListener{
 		lblNewLabel_1 = new JLabel("$");
 		panel_4.add(lblNewLabel_1);
 		
-		JButton btnNewButton_1 = new JButton("Completar compra");
+		btnNewButton_1 = new JButton("Completar compra");
 		btnNewButton_1.setBounds(944, 647, 191, 38);
 		frmPuntoDeVenta.getContentPane().add(btnNewButton_1);
+		btnNewButton_1.addActionListener(this);
 
         // First search
-        updateProductsTable(null);
+        updateProductsTable(textField.getText(), true);
 
 		// Add columnns for the cart
 		m2.addColumn("Producto");
@@ -239,12 +243,7 @@ public class CashierWindow implements ActionListener{
     public void actionPerformed(ActionEvent e){
         if (e.getSource() == btnNewButton) {
             String search = textField.getText();
-            if (search.equals("")) {
-                updateProductsTable(null);
-            }
-            else{
-                updateProductsTable(search);
-            }
+			updateProductsTable(search, false);
         }
 		else if (e.getSource() == btnNewButton_2){
 			Executors.newSingleThreadExecutor().execute(new Runnable() {
@@ -254,19 +253,41 @@ public class CashierWindow implements ActionListener{
 				}
 			});
 		}
+		else if (e.getSource() == btnNewButton_3){
+			Executors.newSingleThreadExecutor().execute(new Runnable() {
+				@Override 
+				public void run(){
+					removeCartProduct(textField_1.getText(), textField_2.getText());
+				}
+			});
+		}
+		else if(e.getSource() == btnNewButton_1){
+			Executors.newSingleThreadExecutor().execute(new Runnable() {
+				@Override
+				public void run(){
+					pushTransaction(textField_3.getText(), loged.getID(), total);
+				}
+			});
+		}
+		else if (e.getSource() ==btnNewButton_4 ) {
+			frmPuntoDeVenta.dispose();
+			LoginWindow.createLoginWindow();
+
+		}
     }
 
-    public void updateProductsTable(String search){
+    public void updateProductsTable(String search, boolean addColumns){
 
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                // TODO Auto-generated method stub
                 // Get products table data
+				btnNewButton.setEnabled(false);
                 ResultSet data = getProductsData(search);
-                DBToolkit.deleteTableData(m1);
+                DBToolkit.deleteTableData(m1, true, false);
                 // Show the products data
-                DBToolkit.showData(data, m1);
+                DBToolkit.showData(data, m1, addColumns);
+				btnNewButton.setEnabled(true);
 
             }
         });
@@ -278,18 +299,18 @@ public class CashierWindow implements ActionListener{
         ResultSet data = null;
 
         try {
-            if (search == null) {
-                PreparedStatement query = c1.prepareStatement("SELECT  idproduct, name, price FROM products;");
+			// No filter
+            if (search == "") {
+                PreparedStatement query = c1.prepareStatement("SELECT  productoID, Nombre, Precio FROM products;");
                 data = query.executeQuery();
             }
             // Search for similar products with the given name
             else{
-                PreparedStatement query = c1.prepareStatement("SELECT idproduct, name, price FROM products WHERE name LIKE '%"+search+"%' ;");
+                PreparedStatement query = c1.prepareStatement("SELECT productoID, Nombre, Precio FROM products WHERE Nombre LIKE '%"+search+"%' ;");
                 data = query.executeQuery();
             }
         } catch (SQLException e) {
-            // TODO: handle exception
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Ocurrio un error", "Error en la DB", JOptionPane.ERROR_MESSAGE);
         }
         return data;
     }
@@ -303,14 +324,14 @@ public class CashierWindow implements ActionListener{
 			int productID = Integer.parseInt(id);
 			int qt = Integer.parseInt(quantity);
 			// Get the name price and quantity in inventory from the product
-			PreparedStatement query = c1.prepareStatement("SELECT price, quantity, name FROM products WHERE idproduct=?;");
+			PreparedStatement query = c1.prepareStatement("SELECT Precio, Cantidad, Nombre FROM products WHERE productoID=?;");
 			query.setInt(1, productID);
 			data = query.executeQuery();
 
 			// If product exist int the DB and entered data is not out of range
 			if (data.next()  && qt >0 && productID>=0) {
 				// if its not already in the cart
-				if (!cart.containsKey(productID) && checkInventory(data.getInt("quantity"), qt)) {
+				if (!cart.containsKey(productID) && checkInventory(data.getInt("Cantidad"), qt)) {
 					Vector <Object> pdct = new Vector<>();
 					// Name
 					pdct.add(data.getString(3));
@@ -332,7 +353,7 @@ public class CashierWindow implements ActionListener{
 					// Get the product on the cart
 					Vector <Object> pdInCart = cart.get(productID);
 					Integer total = (Integer) pdInCart.get(1);
-					if (checkInventory(data.getInt("quantity") , qt+total)) {
+					if (checkInventory(data.getInt("Cantidad") , qt+total)) {
 						total+=qt;
 						pdInCart.setElementAt(total, 1);
 						m2.fireTableDataChanged();
@@ -360,20 +381,57 @@ public class CashierWindow implements ActionListener{
 		}
     }
 
-    public void removeCartProduct(int id, int quantity){
-		// Search in the rows till you find the exact row the product is
-		Integer pID=0;
+	public void removeCartProduct(String id, String cantidad) {
+        try {
+			// Parse the data to integer
+            int productID = Integer.parseInt(id);
+            int qt = Integer.parseInt(cantidad);
 
-		for(int i=0; i<m2.getRowCount(); i++){
-			pID = (Integer) m2.getValueAt(i, 3);
-			if (id == pID) {
-				
-			}
+			// Verify if the product is in the cart (HashMap)
+            if (cart.containsKey(productID) && qt > 0) {
+				// Get the vector from the hash map
+                Vector<Object> pdInCart = cart.get(productID);
+                int totalQty = (Integer) pdInCart.get(1);
+
+				// Remove the selected quantity from the cart
+                if (totalQty > qt) {
+                    totalQty -= qt;
+                    pdInCart.setElementAt(totalQty, 1);
+                    m2.fireTableDataChanged();
+                    restTotal(qt, (Double) pdInCart.get(2));
+                }
+				// Equals then remove product from the cart 
+				else if (totalQty == qt) {
+					// Remove the product from the hash map
+                    cart.remove(productID);
+
+					// Cicle through the rows of the table to find the product
+                    for (int i = 0; i < m2.getRowCount(); i++) {
+                        if ((Integer) m2.getValueAt(i, 3) == productID) {
+							// Delete the row
+                            m2.removeRow(i);
+                            break;
+                        }
+                    }
+					// Subtracts the removed products price from the total
+                    restTotal(qt, (Double) pdInCart.get(2));
+                } else {
+                    JOptionPane.showMessageDialog(null, "La cantidad a eliminar es mayor a la cantidad en el carrito", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(null, "Producto no encontrado en el carrito o los datos son erroneos", "No encontrado", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "El id o la cantidad no son numeros", "Error", JOptionPane.ERROR_MESSAGE);
 		}
-    }
+	}
 
-	public void pushTransaction(String client, int cashierID, double total, Date transactionDate){
+	private void restTotal(int quantity, double price) {
+        total -= (double) quantity * price;
 
+        DecimalFormat df = new DecimalFormat(".####");
+
+        lblNewLabel_1.setText("$" + df.format(total));
 	}
 
 	private void addTotal(int quantity, double price){
@@ -382,6 +440,94 @@ public class CashierWindow implements ActionListener{
 		DecimalFormat df = new DecimalFormat(".####");
 		
 		lblNewLabel_1.setText("$"+df.format(total));
+	}
+
+	public void pushTransaction(String client, int cashierID, double total){
+		DBToolkit db = DBToolkit.getToolkit();
+		Connection c1 = db.getConnection();
+		String ticket = new String("Empresa: Lumérico\n");
+		// Get the current date and time
+
+		Date d1 = new Date();
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(d1);
+		
+		ticket+="Fecha: "+cal.get(Calendar.DAY_OF_MONTH)+"/ "+cal.get(Calendar.MONTH) + "/"+cal.get(Calendar.YEAR)+"\n";
+		ticket+="Cliente: "+client+"\n";
+		ticket+="Cajero: "+cashierID+"\n";
+
+		ticket+="--------------------------------------------------------------------------------------------------\n";
+		// Cycle through the rows of th etable
+		for(int i=0; i<m2.getRowCount(); i++){
+			int totalCurrent = (Integer) m2.getValueAt(i, 1);
+			int idCurrent = (Integer) m2.getValueAt(i, 3);
+			Double price = (Double) m2.getValueAt(i, 2);
+			String productName = (String) m2.getValueAt(i, 0);
+
+			// System.out.println(totalCurrent+" | "+idCurrent);
+			removeFromInventory(idCurrent, totalCurrent, c1);
+			ticket+=totalCurrent+" - "+productName + " | Precio c/u: "+price+"\n";
+
+
+		}
+		ticket+="--------------------------------------------------------------------------------------------------\n";
+		ticket+="\tTotal: "+total;
+		
+		
+
+		// Send the transaction data to the db
+		try {
+			PreparedStatement update = c1.prepareStatement("INSERT INTO tickets (Cliente, CajeroID, Total, Fecha) VALUES (?,?,?,?)");
+			update.setString(1, textField_3.getText());
+			update.setInt(2, cashierID);
+			update.setDouble(3, total);
+			update.setDate(4, new java.sql.Date(d1.getTime()));
+			update.execute();
+		
+		} catch (Exception e) {
+			// TODO: handle exception
+			JOptionPane.showMessageDialog(null, "Error al registrar el ticket", "Error", JOptionPane.ERROR_MESSAGE);
+		}
+
+		Ticket.ShowTicket(ticket);
+		// Clean the cart table
+		DBToolkit.deleteTableData(m2, true, false);
+		// Delete the cart hash map elements
+		cart.clear();
+	}
+
+	public void removeFromInventory(int id, int quantity, Connection c1){
+		
+		try {
+			// Get the quantity alter the inventory
+			PreparedStatement query = c1.prepareStatement("SELECT Cantidad FROM products WHERE productoID=?");
+			query.setInt(1,id ); 
+			ResultSet data = query.executeQuery();
+
+			if (data.next()) {
+				// Get the quantity in the inventory
+				int pdCurrent = data.getInt("Cantidad");
+				if (pdCurrent >= quantity) {
+					// Alter the inventory
+					PreparedStatement update = c1.prepareStatement("UPDATE products SET Cantidad=? WHERE productoID=?;");
+					update.setInt(1, pdCurrent - quantity);
+					update.setInt(2, id);
+					update.executeUpdate();
+				}
+				else{
+					JOptionPane.showMessageDialog(null, "No hay suficientes inventario para el producto: "+id, "Error", JOptionPane.ERROR_MESSAGE);
+				}
+
+			}
+			else{
+				JOptionPane.showMessageDialog(null, "Producto no encontrado", "Error", JOptionPane.ERROR_MESSAGE);
+			}
+
+
+		} catch (SQLException e) {
+			// TODO: handle exception
+			JOptionPane.showMessageDialog(null, "Algo salio mal", "Error", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	private boolean checkInventory(int invQT, int buy){

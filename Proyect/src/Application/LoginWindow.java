@@ -1,28 +1,30 @@
 package Application;
 
 import java.awt.EventQueue;
-import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionListener;
 import java.sql.*;
 import java.util.concurrent.Executors;
 import java.awt.event.ActionEvent;
 import javax.swing.*;
-import java.awt.Color;
-import net.miginfocom.swing.MigLayout;
 
 import DataBaseConnection.*;
-import Users.Account;
+import Users.Administrator;
+import Users.Cashier;
+import Users.Employee;
+import Users.InvalidAccountType;
+import Users.InventoryAdmin;
 
+/**
+ * Main login portal
+ */
 public class LoginWindow implements ActionListener{
 
 	private JFrame frmLoginIteso;
 	private JTextField textField;
 	private JPasswordField passwordField;
-	JButton btnNewButton;
-	JButton btnNewButton_1;
-	JButton btnNewButton_2;
-	JButton btnNewButton_3;
+	private JButton btnNewButton;
+
 
 	/**
 	 * Launch the application.
@@ -57,51 +59,41 @@ public class LoginWindow implements ActionListener{
 	 */
 	private void initialize() {
 		frmLoginIteso = new JFrame();
-		frmLoginIteso.setTitle("Login ITESO");
-		// frmLoginIteso.setIconImage();
-		// frmLoginIteso.setAlwaysOnTop(true);
-		frmLoginIteso.getContentPane().setBackground(new Color(221, 221, 221));
-		frmLoginIteso.setBackground(new Color(128, 128, 128));
 		frmLoginIteso.setResizable(false);
-		frmLoginIteso.setBounds(100, 100, 360, 340);
+		frmLoginIteso.setBounds(100, 100, 450, 275);
 		frmLoginIteso.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-	
-		
-		// Action listener del login
-		btnNewButton = new JButton("Login");
-		btnNewButton.addActionListener(this);
-		frmLoginIteso.getContentPane().setLayout(new MigLayout("", "[58px][230px]", "[69px][30px][30px][48px][23px][23px][23px]"));
-		
-		double scale=0.3;
-		// ImageIcon logoIco= new ImageIcon(getClass().getResource("/resource/account.png"));
-		JLabel lblNewLabel_3 = new JLabel("Company");
-		lblNewLabel_3.setFont(new Font("Tahoma", Font.BOLD, 17));
-		// logoIco.setImage(logoIco.getImage().getScaledInstance((int)(logoIco.getIconWidth()*scale), (int)(logoIco.getIconHeight()*scale), Image.SCALE_AREA_AVERAGING));
-		// lblNewLabel_3.setIcon(logoIco);
-		frmLoginIteso.getContentPane().add(lblNewLabel_3, "cell 1 0,grow, aligny top");
-
-		JLabel lblNewLabel = new JLabel("Username");
-		frmLoginIteso.getContentPane().add(lblNewLabel, "cell 0 1,grow");
+		frmLoginIteso.getContentPane().setLayout(null);
+		frmLoginIteso.setTitle("Login Lumérico");
 		
 		textField = new JTextField();
-		frmLoginIteso.getContentPane().add(textField, "cell 1 1,grow");
+		textField.setBounds(123, 111, 173, 20);
+		frmLoginIteso.getContentPane().add(textField);
 		textField.setColumns(10);
-		frmLoginIteso.getContentPane().add(btnNewButton, "cell 1 3,grow");
 		
 		passwordField = new JPasswordField();
-		frmLoginIteso.getContentPane().add(passwordField, "cell 1 2,grow");
+		passwordField.setBounds(123, 142, 173, 20);
+		frmLoginIteso.getContentPane().add(passwordField);
+		passwordField.setColumns(10);
 		
-		JLabel lblNewLabel_2 = new JLabel("Password");
-		frmLoginIteso.getContentPane().add(lblNewLabel_2, "cell 0 2,grow");
+		Double scale = 0.2;
+		ImageIcon logo = new ImageIcon("Proyect/src/Resource/Empresa.png");
 		
-		btnNewButton_1 = new JButton("Crear cuenta");
-		frmLoginIteso.getContentPane().add(btnNewButton_1, "cell 1 5,growx,aligny top");
-		btnNewButton_1.addActionListener(this);
-
-		// btnNewButton_2 = new JButton("Cambiar contraseña");
-		// frmLoginIteso.getContentPane().add(btnNewButton_2, "cell 1 4,growx,aligny top");
-		// btnNewButton_2.addActionListener(this);
+		JLabel lblNewLabel = new JLabel("");
+        Image imagenEscalada = logo.getImage().getScaledInstance((int)(logo.getIconWidth()*scale), (int)(logo.getIconHeight()*scale), Image.SCALE_SMOOTH);
+		lblNewLabel.setIcon(new ImageIcon(imagenEscalada));
+		lblNewLabel.setBounds(158, 11, 102, 89);
+		frmLoginIteso.getContentPane().add(lblNewLabel);
+		
+		btnNewButton = new JButton("Acceder");
+		btnNewButton.setBounds(123, 174, 173, 23);
+		frmLoginIteso.getContentPane().add(btnNewButton);
+		btnNewButton.addActionListener(this);
+		
+		JLabel lblNewLabel_1 = new JLabel("");
+		lblNewLabel_1.setIcon(new ImageIcon("Proyect/src/Resource/background.png"));
+		lblNewLabel_1.setBounds(0, 0, 434, 261);
+		frmLoginIteso.getContentPane().add(lblNewLabel_1);
+		
 
 	}
 	
@@ -117,23 +109,21 @@ public class LoginWindow implements ActionListener{
 			Executors.newSingleThreadExecutor().execute(new Runnable() {
 				@Override
 				public void run(){
-					loginAcount();
+					btnNewButton.setEnabled(false);
+					try {
+						loginAcount();
+					} catch (InvalidAccountType e) {
+						// TODO Auto-generated catch block
+						JOptionPane.showMessageDialog(null, e, "Tipo de cuenta invalido", JOptionPane.ERROR_MESSAGE);
+					}
+					btnNewButton.setEnabled(true);
 				}
 			});
-
-		}
-		// Change password button
-		else if(e.getSource() == btnNewButton_2) {
-			PasswordChangeWindow.createPasswordChangeWindow();
-		}
-		// Create user window
-		else if(e.getSource() == btnNewButton_1){
-			CreateUserWIndow.initCreateUserWIndow();
 		}
 	}
 
 
-	public void loginAcount(){
+	public void loginAcount() throws InvalidAccountType{
 		// Get credentials
 		String  username= textField.getText();
 		String  password= new String(passwordField.getPassword());
@@ -144,29 +134,48 @@ public class LoginWindow implements ActionListener{
 		
 		ResultSet res = null;
 		try {
-			PreparedStatement credentialsVerification = c1.prepareStatement("SELECT idemployee FROM accounts WHERE username=? AND password=?;");
+			PreparedStatement credentialsVerification = c1.prepareStatement("SELECT * FROM accounts WHERE Usuario=? AND Contraseña=?;");
 			credentialsVerification.setString(1, username);
 			credentialsVerification.setString(2, password);
 			res= credentialsVerification.executeQuery();
 			
 			//.next will return false if the ResultSet is empty
 			if (res.next()) {
-				Integer userID =  res.getInt("idemployee");
+				Integer userID =  res.getInt("empleadoID");
+				Integer type = res.getInt("Tipo");
+				String name = res.getString("Nombre");
+				String surname = res.getString("Apellidos");
+				String department = res.getString("Departamento");
 				frmLoginIteso.dispose();
 				
-				// OPEN THE TABLE WINDOW AFTER LOGIN
-				Account loged = new Account(userID.intValue());
+				// Instantiate the users class with its data depending on the type
+				Employee loged;
+				// Administrator
+				if (type == 0) {
+					loged = new Administrator(name, surname, userID, department);
+				}
+				// Cashier
+				else if (type == 1) {
+					loged = new Cashier(name, surname, userID, department);
+				}
+				// Inventory administrator
+				else if (type == 2) {
+					loged = new InventoryAdmin(name, surname, userID, department);
+				}
+				else{
+					throw new InvalidAccountType(type);
+				}
 
 				if (loged.getPermisions() == 1) {
 					CashierWindow.CreateCashierWindow(loged);
 				}
-				else if (loged.getPermisions() == 0) {
-					ShowTableWindow.CreateTableWindow(loged);
+				else if (loged.getPermisions() == 0 || loged.getPermisions() == 2) {
+					AdministratorPanel.CreateAdministratorPanel(loged);
 				}
-				
-				
-				
-				// res.close();
+				else{
+					throw new InvalidAccountType(loged.getPermisions());
+				}
+
 				
 			}
 			else{

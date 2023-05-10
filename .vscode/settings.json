@@ -1,0 +1,7 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "Proyect/lib/miglayout15-swing.jar",
+        "Proyect/lib/mysql-connector-j-8.0.33.jar"
+    ]
+}

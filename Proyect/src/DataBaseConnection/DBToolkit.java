@@ -4,12 +4,12 @@ import java.sql.*;
 import java.util.Vector;
 
 import javax.swing.JOptionPane;
-import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
                                                                                                                                                                                                                         
 
 /**
  * Tools for the connection, modification, insertion or delition of data in the data base of the company. Constructed as a singletone.
+ *  @Extra Static methods to manage columns and rows of a Default table model
  */
 public class DBToolkit {
 
@@ -86,32 +86,42 @@ public class DBToolkit {
     /*
      * Removes all the data that its on the table model
      */
-    public static void deleteTableData(DefaultTableModel tbl){
+    public static void deleteTableData(DefaultTableModel tbl, boolean deleteRows, boolean deleteColumns){
 		// Remove rows
-		int rows = tbl.getRowCount();
-		for(int i=0; i<rows; i++){
-			// JOptionPane.showMessageDialog(null, "Removing row at "+ i);
-			tbl.removeRow(0);
-		}
-        tbl.setNumRows(0);
-		// Delete Tables
-		tbl.setColumnCount(0);
+		if (deleteRows) {
+            int rows = tbl.getRowCount();
+            for(int i=0; i<rows; i++){
+                // JOptionPane.showMessageDialog(null, "Removing row at "+ i);
+                try {
+                    tbl.removeRow(0);
+                } catch (Exception e) {
+                    System.out.println("Indx aout of bounds");
+                }
+            }
+            tbl.setNumRows(0);
+            tbl.fireTableDataChanged();
+        }
+		// Delete Columns
+		if (deleteColumns) {
+            tbl.setColumnCount(0);
+        }
 	}
 
     /*
      * Takes the result set from a consult and puts the data on a table model
      */
-    public static void showData(ResultSet data, DefaultTableModel tbl){
+    public static void showData(ResultSet data, DefaultTableModel tbl, boolean addColumns){
         ResultSetMetaData meta;
         try {
 
-			//Gets meta data to get the columns names
             meta = data.getMetaData();
-		    int columnsLen = meta.getColumnCount();
-        
-            // Get column names
-            for(int i=1; i<=columnsLen; i++){
-				tbl.addColumn(meta.getColumnName(i));
+             int columnsLen = meta.getColumnCount();
+			if (addColumns) {
+                //Gets meta data to get the columns names
+                // Get column names
+                for(int i=1; i<=columnsLen; i++){
+                    tbl.addColumn(meta.getColumnName(i));
+                }
             }
 
             // Get rows data
@@ -138,4 +148,38 @@ public class DBToolkit {
 		
 	}
 
+    public static Vector<String> getColumns(String currentTable){
+		Vector<String> columns = new Vector<>(); 
+
+		// Add the columns for the table on the vector
+		if (currentTable.equals("accounts")) {
+			columns.add("Nombre"); columns.add("Apellidos"); 
+			columns.add("Departamento"); columns.add("Tipo"); 
+            columns.add("Contraseña");columns.add("Usuario") ;
+		}
+		else if (currentTable.equals("products")) {
+			columns.add("Nombre"); columns.add("Descripcion"); 
+			columns.add("Tipo"); columns.add("Precio");
+			columns.add("Cantidad") ;
+		}
+		else if (currentTable.equals("tickets")) {
+			columns.add("Cliente"); columns.add("CajeroID"); 
+			columns.add("Total"); columns.add("Fecha");
+		}
+		return columns;
+	}
+
+    public static String getPrimaryKey(String tableName){
+        if (tableName.equals("accounts")) {
+            return "empleadoID";
+        }
+        else if (tableName.equals("products")) {
+            return "productoID";
+        }else if (tableName.equals("tickets")) {
+            return "ticketID";
+        }
+        else{
+            return null;
+        }
+    }
 }
