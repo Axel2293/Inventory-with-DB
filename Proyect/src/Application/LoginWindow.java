@@ -93,12 +93,8 @@ public class LoginWindow implements ActionListener{
 		lblNewLabel_1.setIcon(new ImageIcon("Proyect/src/Resource/background.png"));
 		lblNewLabel_1.setBounds(0, 0, 434, 261);
 		frmLoginIteso.getContentPane().add(lblNewLabel_1);
-		
-
 	}
 	
-
-
 	/*
 	 * Actions for the buttons
 	 */
@@ -182,8 +178,7 @@ public class LoginWindow implements ActionListener{
 				JOptionPane.showMessageDialog(null,"Usuario no encontrado o la contraseña es erronea");
 			}
 		} catch (Exception ex) {
-			ex.printStackTrace();
-			JOptionPane.showMessageDialog(null,"Error");
+			JOptionPane.showMessageDialog(null,"Error en la base de datos");
 		}
 	}
 }

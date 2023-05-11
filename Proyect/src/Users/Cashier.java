@@ -1,4 +1,5 @@
 package Users;
+
 /**
  * Type of account for a cashier employee
  */

@@ -93,7 +93,7 @@ public class ModifyRow implements ActionListener{
 		modifyRow();
 	}
 
-	public void getSavedData(){
+	private void getSavedData(){
 		Connection db = DBToolkit.getToolkit().getConnection();
 		PreparedStatement query;
 		ResultSet data;
@@ -109,11 +109,11 @@ public class ModifyRow implements ActionListener{
 				}
 			}
 		} catch (Exception e) {
-			// TODO: handle exception
+			JOptionPane.showMessageDialog(null, "Algo salió mal :( ", "Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
-    public void modifyRow(){
+    private void modifyRow(){
         Connection db = DBToolkit.getToolkit().getConnection();
 		PreparedStatement update;
 
@@ -137,7 +137,6 @@ public class ModifyRow implements ActionListener{
 			update.executeUpdate();
 			JOptionPane.showMessageDialog(null, "Modificado con exito");
 		} catch (Exception e) {
-			e.printStackTrace();
 			JOptionPane.showMessageDialog(null, "Algun dato introducido es erroneo", "Error", JOptionPane.ERROR_MESSAGE);
 		}
     }

@@ -8,6 +8,6 @@ public class App {
         DBToolkit db = DBToolkit.getToolkit("root", "Legoishadow22", "jdbc:mysql://20.25.141.116:3306/Company");
         LoginWindow.createLoginWindow();
         // Close the connection
-        db.closeConnection();
+        // db.closeConnection();
     }
 }

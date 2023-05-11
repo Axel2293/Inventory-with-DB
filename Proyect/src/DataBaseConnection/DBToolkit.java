@@ -63,9 +63,13 @@ public class DBToolkit {
 			if(DB == null){
                 DB = DriverManager.getConnection(url, user, pass);
             }
+            else if (!DB.isValid(0) || DB.isClosed()) {
+                System.out.println("Seems like connection was closed or it just timed out/droped");
+                DB=null;
+                instace.getConnection();
+            }
 		}catch(SQLException ex) {
-            ex.printStackTrace();
-			JOptionPane.showMessageDialog(null, "Revisa tu conexion a internet"+user+pass+url);
+			JOptionPane.showMessageDialog(null, "Revisa tu conexion a internet");
 		}
         return DB;
 	}
@@ -77,8 +81,7 @@ public class DBToolkit {
                 DB = null;
                 System.out.println("Connection closed");
             } catch (SQLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Error al cerrar conexion");
             }
         }
     }
@@ -139,10 +142,7 @@ public class DBToolkit {
             }
 			data.close();
         } catch (Exception e) {
-            // TODO: handle exception
-            System.out.println("HOLAAAAAAAA");
-            e.printStackTrace();
-            
+            JOptionPane.showMessageDialog(null, "Error al mostrar los datos");
         }
 
 		

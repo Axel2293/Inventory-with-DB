@@ -7,6 +7,7 @@ public class InvalidAccountType extends Exception{
     int type = 0;
 
     public InvalidAccountType(int type){
+        super(""+type);
         this.type = type;
     }
 

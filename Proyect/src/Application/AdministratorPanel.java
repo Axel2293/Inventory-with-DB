@@ -368,8 +368,7 @@ public class AdministratorPanel implements ActionListener {
 				String columnFilter=textField_3.getText();
 				String value = textField_4.getText();
 				
-				query = db.prepareStatement("SELECT * FROM "+table_name+" WHERE "+columnFilter+"=?;");
-				query.setObject(1, value);
+				query = db.prepareStatement("SELECT * FROM "+table_name+" WHERE "+columnFilter+" LIKE '%"+value+"%';");
 				data = query.executeQuery();
 				
 			}

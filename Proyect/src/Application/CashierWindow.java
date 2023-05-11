@@ -276,7 +276,7 @@ public class CashierWindow implements ActionListener{
 		}
     }
 
-    public void updateProductsTable(String search, boolean addColumns){
+    private void updateProductsTable(String search, boolean addColumns){
 
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
@@ -293,7 +293,7 @@ public class CashierWindow implements ActionListener{
         });
     }
 
-    public ResultSet getProductsData(String search){
+    private ResultSet getProductsData(String search){
         DBToolkit db = DBToolkit.getToolkit();
         Connection c1 = db.getConnection();
         ResultSet data = null;
@@ -315,7 +315,7 @@ public class CashierWindow implements ActionListener{
         return data;
     }
 
-    public void addCartProduct(String id, String quantity){
+    private void addCartProduct(String id, String quantity){
 		DBToolkit db = DBToolkit.getToolkit();
         Connection c1 = db.getConnection();
         ResultSet data = null;
@@ -360,12 +360,12 @@ public class CashierWindow implements ActionListener{
 						addTotal(qt, data.getDouble(1));
 					}
 					else{
-						JOptionPane.showMessageDialog(null, "No hay inventario suficiente para el producto: "+data.getString("name"), "Inventario insuficiente", JOptionPane.INFORMATION_MESSAGE);
+						JOptionPane.showMessageDialog(null, "No hay inventario suficiente para el producto: "+data.getString("Nombre"), "Inventario insuficiente", JOptionPane.INFORMATION_MESSAGE);
 					}
 					
 				}
 				else {
-					JOptionPane.showMessageDialog(null, "No hay inventario suficiente para el producto: "+data.getString("name"), "Inventario insuficiente", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(null, "No hay inventario suficiente para el producto: "+data.getString("Nombre"), "Inventario insuficiente", JOptionPane.INFORMATION_MESSAGE);
 				}
 				
 
@@ -381,7 +381,7 @@ public class CashierWindow implements ActionListener{
 		}
     }
 
-	public void removeCartProduct(String id, String cantidad) {
+	private void removeCartProduct(String id, String cantidad) {
         try {
 			// Parse the data to integer
             int productID = Integer.parseInt(id);
@@ -442,7 +442,7 @@ public class CashierWindow implements ActionListener{
 		lblNewLabel_1.setText("$"+df.format(total));
 	}
 
-	public void pushTransaction(String client, int cashierID, double total){
+	private void pushTransaction(String client, int cashierID, double total){
 		DBToolkit db = DBToolkit.getToolkit();
 		Connection c1 = db.getConnection();
 		String ticket = new String("Empresa: Lumérico\n");
@@ -496,7 +496,7 @@ public class CashierWindow implements ActionListener{
 		cart.clear();
 	}
 
-	public void removeFromInventory(int id, int quantity, Connection c1){
+	private void removeFromInventory(int id, int quantity, Connection c1){
 		
 		try {
 			// Get the quantity alter the inventory

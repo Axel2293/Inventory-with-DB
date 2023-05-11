@@ -22,7 +22,8 @@ import DataBaseConnection.DBToolkit;
  */
 public class AddTableRow implements ActionListener{
 
-	JFrame frame;
+	private JFrame frame;
+	
 	private JTable table;
 	private DefaultTableModel m;
 
